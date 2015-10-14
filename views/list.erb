@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+  <head>
+  </head>
+  <body>
+    <h1><%= list.name %></h1>
+    <ul>
+      <% list.items.each do |item| %>
+        <li><%= item.name %></li>
+      <% end %>
+    </ul>
+  </body>
+</html>
