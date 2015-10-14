@@ -7,6 +7,10 @@ require './lib/all'
 class App < Sinatra::Base
   set :logging, true
 
+  def current_user
+    User.find 1
+  end
+
   get "/" do
     "It works!"
   end
@@ -14,7 +18,7 @@ class App < Sinatra::Base
   # HTML section
 
   get "/lists/:list_id" do
-    list = List.find params[:list_id]
+    list = current_user.lists.find params[:list_id]
     erb :list, locals: { list: list }
   end
 
@@ -29,18 +33,29 @@ class App < Sinatra::Base
   # JSON API
 
   get "/api/lists/:list_id" do
-    list = List.find params[:list_id]
+    list = current_user.lists.find params[:list_id]
     { id:    list.id,
       name:  list.name,
       items: list.items }.to_json
   end
 
   post "/api/lists/:list_id/todos" do
-    i = Item.create(
-      name:    params[:item_name],
-      list_id: params[:list_id]
-    )
-    i.to_json
+    list = List.find params[:list_id]
+    if list.user == current_user
+      i = Item.new(
+        name:    params[:item_name],
+        list_id: params[:list_id]
+      )
+      if i.save
+        i.to_json
+      else
+        status 422
+        body({ error: i.errors.full_messages.to_sentence }.to_json)
+      end
+    else
+      status 403
+      body({ error: "Not allowed to modify this list" }.to_json)
+    end
   end
 end
 
